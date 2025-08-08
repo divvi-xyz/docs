@@ -46,7 +46,7 @@
         ]
       },
       {
-        "group": "General",
+        "group": "Divvi Protocol",
         "pages": [
           "protocol/overview",
           "protocol/fund-managers",
