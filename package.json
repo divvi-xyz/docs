@@ -4,7 +4,7 @@
   "private": true,
   "description": "Divvi documentation website",
   "scripts": {
-    "generate-docs": "ts-node scripts/generate-docs-json.ts"
+    "generate-docs": "ts-node scripts/generate-docs.ts"
   },
   "devDependencies": {
     "@mintlify/models": "^0.0.216",

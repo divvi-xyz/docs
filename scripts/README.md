@@ -1,25 +1,51 @@
 # Docs Generation Scripts
 
-## `generate-docs-json.ts`
+## `generate-docs.ts`
 
 This script generates the final Mintlify `docs.json` configuration by merging:
 
 - `docs/docs-base.json` - Base configuration with global settings, theming, navbar, footer, etc.
-- `docs/protocol/docs/docs.json` - Protocol-specific navigation and content from the submodule
+- Multiple submodule documentation from configured sources
 
 ### How it works
 
-1. **Reads base configuration**: Loads the main docs configuration with global settings
-2. **Reads protocol configuration**: Loads the protocol-specific navigation structure
-3. **Merges navigation**: Combines navigation groups, prefixing protocol pages with `protocol/`
-4. **Writes merged config**: Outputs the final `docs/docs.json` file
+1. **Copies submodule files**: Replaces symlinks with actual files from configured submodules
+2. **Reads base configuration**: Loads the main docs configuration with global settings
+3. **Processes each submodule**: Reads navigation from each configured submodule
+4. **Merges navigation**: Combines all navigation groups with appropriate path prefixes
+5. **Writes merged config**: Outputs the final `docs/docs.json` file
+
+### Configuration
+
+Submodules are configured in the script constructor:
+
+```typescript
+this.submodules = [
+  {
+    name: "protocol",
+    source: "submodules/divvi-protocol/docs",
+    dest: "protocol",
+    docsConfig: "docs.json",
+  },
+  // Add more submodules here:
+  // {
+  //   name: "mobile",
+  //   source: "submodules/divvi-mobile/docs",
+  //   dest: "mobile",
+  //   docsConfig: "docs.json"
+  // }
+];
+```
 
 ### Key features
 
-- **Path prefixing**: Protocol pages are automatically prefixed with `protocol/` to match the file structure
-- **Navigation merging**: Protocol navigation groups are renamed to avoid conflicts (e.g., "General" → "Protocol")
-- **Safe merging**: Base configuration takes precedence, protocol config only adds navigation
-- **Verbose logging**: Shows exactly what's being merged for debugging
+- **Multi-submodule support**: Handles any number of submodules with flexible configuration
+- **Automatic file copying**: Replaces symlinks with actual files for Mintlify compatibility
+- **Path prefixing**: Submodule pages are automatically prefixed to match the file structure
+- **Safe merging**: Base configuration takes precedence, submodules only add navigation
+- **Warning files**: Creates `README-AUTO-GENERATED.md` in copied directories
+- **Graceful handling**: Skips missing submodules with warnings instead of failing
+- **Verbose logging**: Shows exactly what's being processed for debugging
 
 ### Usage
 
@@ -32,75 +58,48 @@ npm run generate-docs
 #### Direct execution:
 
 ```bash
-npx ts-node scripts/generate-docs-json.ts
+npx ts-node scripts/generate-docs.ts
 ```
 
-### Example output
+### Adding new submodules
 
-The script merges this base navigation:
+To add a new submodule:
 
-```json
+1. **Add to configuration** in the script:
+
+```typescript
 {
-  "navigation": {
-    "groups": [
-      {
-        "group": "Getting Started",
-        "pages": ["index", "builder-camp"]
-      }
-    ]
-  }
+  name: "mobile",                     // Display name
+  source: "submodules/divvi-mobile/docs", // Source path (relative to project root)
+  dest: "mobile",                     // Destination in docs/ directory
+  docsConfig: "docs.json"             // Path to docs.json (relative to source)
 }
 ```
 
-With this protocol navigation:
+2. **Run the script**:
 
-```json
-{
-  "navigation": {
-    "groups": [
-      {
-        "group": "General",
-        "pages": ["overview", "fund-managers", "contracts"]
-      }
-    ]
-  }
-}
+```bash
+npm run generate-docs
 ```
 
-To produce:
+The script will automatically:
 
-```json
-{
-  "navigation": {
-    "groups": [
-      {
-        "group": "Getting Started",
-        "pages": ["index", "builder-camp"]
-      },
-      {
-        "group": "Protocol",
-        "pages": [
-          "protocol/overview",
-          "protocol/fund-managers",
-          "protocol/contracts"
-        ]
-      }
-    ]
-  }
-}
-```
+- Copy files from `submodules/divvi-mobile/docs/` to `docs/mobile/`
+- Read navigation from `docs/mobile/docs.json`
+- Prefix pages with `mobile/`
+- Merge into the final configuration
 
 ### Requirements
 
 - Node.js 18+
-- TypeScript (`npm install typescript ts-node @types/node --save-dev`)
+- TypeScript and required dependencies (see `package.json`)
 
 ### Error handling
 
-The script will fail gracefully if:
+The script will:
 
-- Input files don't exist
-- JSON parsing fails
-- File write permissions are insufficient
+- **Skip missing submodules** with warnings instead of failing
+- **Fail gracefully** if base config is missing or malformed
+- **Log clear errors** for debugging
 
-All errors are logged with clear messages for debugging.
+This allows partial builds when some submodules are unavailable.
