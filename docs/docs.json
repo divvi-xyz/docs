@@ -1,0 +1,97 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Divvi Docs",
+  "description": "Documentation for building with Divvi - a blockchain-based protocol that makes it easy to align incentives among participants in on-chain ecosystems.",
+  "logo": {
+    "light": "/images/divvi-icon.svg",
+    "dark": "/images/divvi-icon.svg",
+    "href": "https://divvi.xyz"
+  },
+  "favicon": "/images/favicon.ico",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#F8FAFC",
+    "dark": "#0F172A"
+  },
+  "theme": "mint",
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/divvixyz"
+      },
+      {
+        "label": "Discord",
+        "href": "https://discord.com/invite/EaxZDhMuDn"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Started",
+      "href": "https://app.divvi.xyz/builders"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Main",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["index", "builder-camp"]
+          },
+          {
+            "group": "Community",
+            "pages": ["community-code-of-conduct"]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "discord": "https://discord.com/invite/EaxZDhMuDn",
+      "x": "https://x.com/letsdivvi",
+      "github": "https://github.com/divvixyz"
+    },
+    "links": [
+      {
+        "header": "Community",
+        "items": [
+          {
+            "label": "Discord",
+            "href": "https://discord.com/invite/EaxZDhMuDn"
+          },
+          {
+            "label": "Twitter",
+            "href": "https://x.com/letsdivvi"
+          },
+          {
+            "label": "Telegram",
+            "href": "https://t.me/letsdivvi"
+          }
+        ]
+      },
+      {
+        "header": "Resources",
+        "items": [
+          {
+            "label": "GitHub",
+            "href": "https://github.com/divvixyz"
+          },
+          {
+            "label": "Builder Camp Terms",
+            "href": "https://divvi.xyz/terms"
+          },
+          {
+            "label": "Privacy Policy",
+            "href": "https://valora.xyz/privacy"
+          }
+        ]
+      }
+    ]
+  },
+  "search": {
+    "prompt": "Search Divvi docs..."
+  }
+}
