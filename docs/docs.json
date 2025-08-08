@@ -4,8 +4,7 @@
   "description": "Documentation for building with Divvi - a blockchain-based protocol that makes it easy to align incentives among participants in on-chain ecosystems.",
   "logo": {
     "light": "/images/divvi-icon.svg",
-    "dark": "/images/divvi-icon.svg",
-    "href": "https://divvi.xyz"
+    "dark": "/images/divvi-icon.svg"
   },
   "favicon": "/images/favicon.ico",
   "colors": {
@@ -18,7 +17,7 @@
     "links": [
       {
         "label": "GitHub",
-        "href": "https://github.com/divvixyz"
+        "href": "https://github.com/divvi-xyz"
       },
       {
         "label": "Discord",
@@ -32,19 +31,14 @@
     }
   },
   "navigation": {
-    "tabs": [
+    "groups": [
       {
-        "tab": "Main",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": ["index", "builder-camp"]
-          },
-          {
-            "group": "Community",
-            "pages": ["community-code-of-conduct"]
-          }
-        ]
+        "group": "Getting Started",
+        "pages": ["index", "builder-camp"]
+      },
+      {
+        "group": "Community",
+        "pages": ["community-code-of-conduct"]
       }
     ]
   },
