@@ -1,0 +1,9 @@
+[submodule "submodules/divvi-protocol"]
+	path = submodules/divvi-protocol
+	url = https://github.com/divvi-xyz/divvi-protocol.git
+[submodule "submodules/divvi-mobile"]
+	path = submodules/divvi-mobile
+	url = https://github.com/divvi-xyz/divvi-mobile.git
+[submodule "submodules/hooks"]
+	path = submodules/hooks
+	url = https://github.com/divvi-xyz/hooks.git

@@ -30,29 +30,18 @@
       "href": "https://app.divvi.xyz/builders"
     }
   },
-  "navigation": [
-    {
-      "group": "Getting Started",
-      "pages": [
-        "index",
-        "builder-camp"
-      ]
-    },
-    {
-      "group": "Community",
-      "pages": [
-        "community-code-of-conduct"
-      ]
-    },
-    {
-      "group": "General",
-      "pages": [
-        "protocol/overview",
-        "protocol/fund-managers",
-        "protocol/contracts"
-      ]
-    }
-  ],
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["index", "builder-camp"]
+      },
+      {
+        "group": "Community",
+        "pages": ["community-code-of-conduct"]
+      }
+    ]
+  },
   "footer": {
     "socials": {
       "discord": "https://discord.com/invite/EaxZDhMuDn",
