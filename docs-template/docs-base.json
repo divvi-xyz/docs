@@ -47,7 +47,7 @@
       {
         "group": "Mobile Framework",
         "pages": [
-          "overview",
+          "mobile-framework/overview",
           {
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile"
