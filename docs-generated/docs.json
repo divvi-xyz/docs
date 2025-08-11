@@ -75,6 +75,94 @@
             ]
           }
         ]
+      },
+      {
+        "group": "Mobile Framework",
+        "pages": [
+          "overview",
+          {
+            "group": "Creating a new project",
+            "autogenerate": "mobile-framework/divvi-mobile",
+            "pages": [
+              "mobile-framework/divvi-mobile/_reference",
+              "mobile-framework/divvi-mobile/architecture",
+              "mobile-framework/divvi-mobile/configuration",
+              "mobile-framework/divvi-mobile/getting-started",
+              {
+                "group": "reference",
+                "pages": [
+                  "mobile-framework/divvi-mobile/reference/README",
+                  {
+                    "group": "functions",
+                    "pages": [
+                      "mobile-framework/divvi-mobile/reference/functions/Button",
+                      "mobile-framework/divvi-mobile/reference/functions/createApp",
+                      "mobile-framework/divvi-mobile/reference/functions/getFees",
+                      "mobile-framework/divvi-mobile/reference/functions/getPublicClient",
+                      "mobile-framework/divvi-mobile/reference/functions/getWalletClient",
+                      "mobile-framework/divvi-mobile/reference/functions/navigate",
+                      "mobile-framework/divvi-mobile/reference/functions/prepareTransactions",
+                      "mobile-framework/divvi-mobile/reference/functions/sendTransactions",
+                      "mobile-framework/divvi-mobile/reference/functions/unlockAccount",
+                      "mobile-framework/divvi-mobile/reference/functions/usePrepareTransactions",
+                      "mobile-framework/divvi-mobile/reference/functions/usePublicClient",
+                      "mobile-framework/divvi-mobile/reference/functions/useSendTransactions",
+                      "mobile-framework/divvi-mobile/reference/functions/useWallet",
+                      "mobile-framework/divvi-mobile/reference/functions/useWalletClient"
+                    ]
+                  },
+                  {
+                    "group": "interfaces",
+                    "pages": [
+                      "mobile-framework/divvi-mobile/reference/interfaces/PreparedTransactionsNeedDecreaseSpendAmountForGas",
+                      "mobile-framework/divvi-mobile/reference/interfaces/PreparedTransactionsNotEnoughBalanceForGas",
+                      "mobile-framework/divvi-mobile/reference/interfaces/PreparedTransactionsPossible",
+                      "mobile-framework/divvi-mobile/reference/interfaces/PublicAppConfig"
+                    ]
+                  },
+                  {
+                    "group": "type-aliases",
+                    "pages": [
+                      "mobile-framework/divvi-mobile/reference/type-aliases/ButtonSize",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/ButtonTextSize",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/ButtonType",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/NetworkId",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/PreparedTransactionsResult",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/StackParamList",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/TransactionRequest",
+                      "mobile-framework/divvi-mobile/reference/type-aliases/UnlockResult"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Adding a backend protocol",
+            "autogenerate": "mobile-framework/hooks",
+            "pages": [
+              "mobile-framework/hooks/index",
+              "mobile-framework/hooks/live-preview",
+              "mobile-framework/hooks/platform",
+              {
+                "group": "types",
+                "pages": [
+                  "mobile-framework/hooks/types/name-resolution",
+                  "mobile-framework/hooks/types/position",
+                  "mobile-framework/hooks/types/shortcut"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Publishing",
+            "pages": [
+              "mobile-framework/publishing/play-store",
+              "mobile-framework/publishing/app-store",
+              "mobile-framework/publishing/asset-requirements"
+            ]
+          }
+        ]
       }
     ]
   },
