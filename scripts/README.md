@@ -2,104 +2,105 @@
 
 ## `generate-docs.ts`
 
-This script generates the final Mintlify `docs.json` configuration by merging:
+This script generates Mintlify-ready documentation in `docs-generated/` by processing templates and submodules.
 
-- `docs/docs-base.json` - Base configuration with global settings, theming, navbar, footer, etc.
-- Multiple submodule documentation from configured sources
+## 🏗️ **Architecture**
 
-### How it works
+```
+docs-template/              # Source templates & symlinks
+├── docs-base.json         # Base Mintlify config
+├── index.mdx             # Manual content
+├── images/               # Assets
+└── protocol -> ../submodules/divvi-protocol/docs  # Symlinks
 
-1. **Copies submodule files**: Replaces symlinks with actual files from configured submodules
-2. **Reads base configuration**: Loads the main docs configuration with global settings
-3. **Processes each submodule**: Reads navigation from each configured submodule
-4. **Merges navigation**: Combines all navigation groups with appropriate path prefixes
-5. **Writes merged config**: Outputs the final `docs/docs.json` file
-
-### Configuration
-
-Submodules are configured in the script constructor:
-
-```typescript
-this.submodules = [
-  {
-    name: "protocol",
-    source: "submodules/divvi-protocol/docs",
-    dest: "protocol",
-    docsConfig: "docs.json",
-  },
-  // Add more submodules here:
-  // {
-  //   name: "mobile",
-  //   source: "submodules/divvi-mobile/docs",
-  //   dest: "mobile",
-  //   docsConfig: "docs.json"
-  // }
-];
+docs-generated/            # Final Mintlify output
+├── docs.json             # Final configuration
+├── index.mdx            # Copied from template
+├── images/              # Copied assets
+└── protocol/            # Copied from submodule (.md→.mdx)
 ```
 
-### Key features
+## 🔄 **How it works**
 
-- **Multi-submodule support**: Handles any number of submodules with flexible configuration
-- **Automatic file copying**: Replaces symlinks with actual files for Mintlify compatibility
-- **Path prefixing**: Submodule pages are automatically prefixed to match the file structure
-- **Safe merging**: Base configuration takes precedence, submodules only add navigation
-- **Warning files**: Creates `README-AUTO-GENERATED.md` in copied directories
-- **Graceful handling**: Skips missing submodules with warnings instead of failing
-- **Verbose logging**: Shows exactly what's being processed for debugging
+1. **Copy template files**: Copies manual content from `docs-template/` to `docs-generated/`
+2. **Copy submodule files**: Follows symlinks and copies actual files with `.md` → `.mdx` conversion
+3. **Process navigation**: Handles both manual navigation and `AUTO_GENERATE_FROM_FOLDER` sentinels
+4. **Merge configuration**: Combines base config with submodule navigation
+5. **Generate final docs.json**: Outputs Mintlify-ready configuration
 
-### Usage
+## ⚙️ **Configuration**
 
-#### Via npm script (recommended):
+### No Configuration Needed!
 
-```bash
-npm run generate-docs
-```
+The script automatically discovers and processes all content in `docs-template/`:
 
-#### Direct execution:
+- **Regular files/folders**: Copied as-is with .md→.mdx conversion
+- **Symlinks**: Followed and their content copied (preserving structure)
+- **docs.json files**: Used for navigation when found
+- **`autogenerate` property**: Processed recursively
 
-```bash
-npx ts-node scripts/generate-docs.ts
-```
+### Auto-generation Property
 
-### Adding new submodules
+Use the `autogenerate` property to specify which folder to generate pages from:
 
-To add a new submodule:
-
-1. **Add to configuration** in the script:
-
-```typescript
+```json
 {
-  name: "mobile",                     // Display name
-  source: "submodules/divvi-mobile/docs", // Source path (relative to project root)
-  dest: "mobile",                     // Destination in docs/ directory
-  docsConfig: "docs.json"             // Path to docs.json (relative to source)
+  "group": "KPI Calculations",
+  "autogenerate": "calculate-kpi"
 }
 ```
 
-2. **Run the script**:
+This will:
+
+- Auto-generate pages from `.md`/`.mdx` files in the specified folder
+- Sort alphabetically
+- Use existing `docs.json` if present in the folder
+- Support nested group structures
+- Apply proper path prefixes
+
+## ✨ **Key Features**
+
+- **Template-based**: Clean separation of manual vs generated content
+- **Symlink-friendly development**: Use symlinks in template for easy editing
+- **Mintlify-ready output**: Actual files (no symlinks) with proper extensions
+- **Auto-generation**: Generate navigation from folder structure
+- **MD→MDX conversion**: Automatically converts `.md` files to `.mdx`
+- **Multi-submodule**: Handle multiple submodules with different configurations
+- **Warning files**: Auto-generated directories include warning files
+
+## 🚀 **Usage**
 
 ```bash
-npm run generate-docs
+yarn generate-docs
 ```
 
-The script will automatically:
+This will:
 
-- Copy files from `submodules/divvi-mobile/docs/` to `docs/mobile/`
-- Read navigation from `docs/mobile/docs.json`
-- Prefix pages with `mobile/`
-- Merge into the final configuration
+1. Clean and recreate `docs-generated/`
+2. Copy all template files (converting .md → .mdx)
+3. Process symlinks and copy submodule content
+4. Generate final `docs.json` with merged navigation
+5. Ready for `mintlify dev` in `docs-generated/`
 
-### Requirements
+## 📁 **Adding New Submodules**
 
-- Node.js 18+
-- TypeScript and required dependencies (see `package.json`)
+Simply add a symlink in the template directory:
 
-### Error handling
+```bash
+cd docs-template
+ln -s ../submodules/new-module/docs new-module
+```
 
-The script will:
+That's it! The script will automatically:
 
-- **Skip missing submodules** with warnings instead of failing
-- **Fail gracefully** if base config is missing or malformed
-- **Log clear errors** for debugging
+- Follow the symlink and copy all content
+- Convert .md files to .mdx
+- Use any docs.json found for navigation
+- Process `autogenerate` properties recursively
 
-This allows partial builds when some submodules are unavailable.
+## 🎯 **Benefits**
+
+- **CI-friendly**: Generated output is deterministic and Mintlify-compatible
+- **Flexible**: Mix manual navigation with auto-generated content
+- **Scalable**: Easy to add new submodules
+- **Clean separation**: Templates vs final output

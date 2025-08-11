@@ -39,6 +39,10 @@
       {
         "group": "Community",
         "pages": ["community-code-of-conduct"]
+      },
+      {
+        "group": "Protocol",
+        "autogenerate": "protocol"
       }
     ]
   },
