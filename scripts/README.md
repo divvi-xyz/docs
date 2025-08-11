@@ -22,11 +22,9 @@ docs-generated/            # Final Mintlify output
 
 ## 🔄 **How it works**
 
-1. **Copy template files**: Copies manual content from `docs-template/` to `docs-generated/`
-2. **Copy submodule files**: Follows symlinks and copies actual files with `.md` → `.mdx` conversion
-3. **Process navigation**: Handles both manual navigation and `AUTO_GENERATE_FROM_FOLDER` sentinels
-4. **Merge configuration**: Combines base config with submodule navigation
-5. **Generate final docs.json**: Outputs Mintlify-ready configuration
+1. Copy template files (following symlinks, .md→.mdx conversion)
+2. Process `autogenerate` properties and create nested groups
+3. Merge configurations into final Mintlify-ready `docs.json`
 
 ## ⚙️ **Configuration**
 
@@ -50,25 +48,21 @@ Use the `autogenerate` property to specify which folder to generate pages from:
 }
 ```
 
-This will:
+Auto-generates navigation from folder structure:
 
-- Auto-generate pages from `.md`/`.mdx` files in the specified folder
-- **Automatically create nested groups for subdirectories**
-- Sort alphabetically (files first, then subdirectory groups)
-- Preserve original folder names exactly (no case changes)
-- Use existing `docs.json` if present in the folder
-- Support deeply nested structures
-- Apply proper path prefixes
+- Creates pages from `.md`/`.mdx` files
+- **Automatically creates nested groups for subdirectories**
+- Preserves original folder names (no case changes)
+- Uses existing `docs.json` if present (with recursive processing)
+- Supports unlimited nesting depth
 
 ## ✨ **Key Features**
 
 - **Template-based**: Clean separation of manual vs generated content
-- **Symlink-friendly development**: Use symlinks in template for easy editing
-- **Mintlify-ready output**: Actual files (no symlinks) with proper extensions
-- **Auto-generation**: Generate navigation from folder structure
-- **MD→MDX conversion**: Automatically converts `.md` files to `.mdx`
-- **Multi-submodule**: Handle multiple submodules with different configurations
-- **Warning files**: Auto-generated directories include warning files
+- **Symlink-friendly**: Use symlinks for development, get real files for Mintlify
+- **Auto-generation**: Generate nested navigation from folder structure
+- **MD→MDX conversion**: Automatic file conversion
+- **Recursive processing**: Works in root and nested groups
 
 ## 🚀 **Usage**
 
@@ -76,13 +70,12 @@ This will:
 yarn generate-docs
 ```
 
-This will:
+Generates Mintlify-ready docs in `docs-generated/` by:
 
-1. Clean and recreate `docs-generated/`
-2. Copy all template files (converting .md → .mdx)
-3. Process symlinks and copy submodule content
-4. Generate final `docs.json` with merged navigation
-5. Ready for `mintlify dev` in `docs-generated/`
+1. Copying template files (following symlinks, .md→.mdx conversion)
+2. Processing `autogenerate` properties recursively
+3. Creating nested groups from folder structure
+4. Outputting final `docs.json` with merged navigation
 
 ## 📁 **Adding New Submodules**
 
