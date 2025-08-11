@@ -1,0 +1,7 @@
+/*
+For some reason, the sidebar in the mint theme shows up under the header.
+This is a hack to fix it.
+ */
+#sidebar {
+  top: 4rem !important;
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Divvi Protocol",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Divvi Protocol",
+        "pages": [
+          "overview",
+          "fund-managers",
+          "contracts",
+          {
+            "group": "KPI calculation",
+            "autogenerate": "calculate-kpi"
+          }
+        ]
+      }
+    ]
+  }
+}
