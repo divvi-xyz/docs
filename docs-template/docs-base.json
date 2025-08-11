@@ -51,6 +51,14 @@
           {
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile"
+          },
+          {
+            "group": "Publishing",
+            "pages": [
+              "mobile-framework/publishing/play-store",
+              "mobile-framework/publishing/app-store",
+              "mobile-framework/publishing/asset-requirements"
+            ]
           }
         ]
       }
