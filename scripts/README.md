@@ -53,9 +53,11 @@ Use the `autogenerate` property to specify which folder to generate pages from:
 This will:
 
 - Auto-generate pages from `.md`/`.mdx` files in the specified folder
-- Sort alphabetically
+- **Automatically create nested groups for subdirectories**
+- Sort alphabetically (files first, then subdirectory groups)
+- Preserve original folder names exactly (no case changes)
 - Use existing `docs.json` if present in the folder
-- Support nested group structures
+- Support deeply nested structures
 - Apply proper path prefixes
 
 ## ✨ **Key Features**

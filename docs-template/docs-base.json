@@ -43,6 +43,16 @@
       {
         "group": "Protocol",
         "autogenerate": "protocol"
+      },
+      {
+        "group": "Mobile Framework",
+        "pages": [
+          "overview",
+          {
+            "group": "Creating a new project",
+            "autogenerate": "mobile-framework/divvi-mobile"
+          }
+        ]
       }
     ]
   },

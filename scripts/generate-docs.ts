@@ -117,14 +117,15 @@ function copyAllTemplateFiles(): void {
 function generatePagesFromFolder(
   folderPath: string,
   prefix: string = ""
-): string[] {
+): (string | any)[] {
   if (!fs.existsSync(folderPath)) {
     return [];
   }
 
   const files = fs.readdirSync(folderPath, { withFileTypes: true });
-  const pages: string[] = [];
+  const pages: (string | any)[] = [];
 
+  // First, add all .md/.mdx files in this folder
   files
     .filter(
       (file) =>
@@ -138,7 +139,37 @@ function generatePagesFromFolder(
       pages.push(prefix ? `${prefix}/${fileName}` : fileName);
     });
 
+  // Then, create nested groups for subdirectories that contain .md/.mdx files
+  files
+    .filter((file) => file.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((dir) => {
+      const subfolderPath = path.join(folderPath, dir.name);
+      const subfolderPrefix = prefix ? `${prefix}/${dir.name}` : dir.name;
+      const subPages = generatePagesFromFolder(subfolderPath, subfolderPrefix);
+
+      if (subPages.length > 0) {
+        // Create a nested group for this subdirectory
+        pages.push({
+          group: dir.name,
+          pages: subPages,
+        });
+      }
+    });
+
   return pages;
+}
+
+function countPagesRecursively(pages: (string | any)[]): number {
+  let count = 0;
+  for (const page of pages) {
+    if (typeof page === "string") {
+      count++;
+    } else if (page.pages && Array.isArray(page.pages)) {
+      count += countPagesRecursively(page.pages);
+    }
+  }
+  return count;
 }
 
 function processNavigationGroup(
@@ -186,8 +217,9 @@ function processNavigationGroup(
 
     // Generate from folder structure
     const generatedPages = generatePagesFromFolder(folderPath, prefix);
+    const totalPageCount = countPagesRecursively(generatedPages);
     console.log(
-      `🤖 Auto-generated ${generatedPages.length} pages for ${group.group} from folder: ${autoGenerateFolder}`
+      `🤖 Auto-generated ${totalPageCount} pages for ${group.group} from folder: ${autoGenerateFolder}`
     );
 
     return {
@@ -198,7 +230,19 @@ function processNavigationGroup(
 
   // Handle regular navigation group
   if (Array.isArray(group.pages)) {
-    return currentPrefix ? prependPrefix(group, currentPrefix) : group;
+    if (currentPrefix) {
+      return prependPrefix(group, currentPrefix);
+    } else {
+      // Root-level group - still need to process nested autogenerate groups
+      return {
+        ...group,
+        pages: group.pages.map((entry: any) =>
+          typeof entry === "string"
+            ? entry
+            : processNavigationGroup(entry as any, currentPrefix)
+        ),
+      };
+    }
   }
 
   return group;
@@ -265,13 +309,17 @@ function generateDocs(): void {
   console.log("📋 Final navigation structure:");
   const logGroup = (group: any, indent: string = "  ") => {
     console.log(`${indent}📁 ${group.group}:`);
-    group.pages.forEach((page: any) => {
-      if (typeof page === "string") {
-        console.log(`${indent}  📄 ${page}`);
-      } else {
-        logGroup(page, indent + "  ");
-      }
-    });
+    if (group.pages && Array.isArray(group.pages)) {
+      group.pages.forEach((page: any) => {
+        if (typeof page === "string") {
+          console.log(`${indent}  📄 ${page}`);
+        } else {
+          logGroup(page, indent + "  ");
+        }
+      });
+    } else {
+      console.log(`${indent}  ⚠️  No pages generated`);
+    }
   };
 
   allNavigation.forEach((group: any) => {
