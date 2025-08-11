@@ -53,6 +53,10 @@
             "autogenerate": "mobile-framework/divvi-mobile"
           },
           {
+            "group": "Adding a backend protocol",
+            "autogenerate": "mobile-framework/hooks"
+          },
+          {
             "group": "Publishing",
             "pages": [
               "mobile-framework/publishing/play-store",
