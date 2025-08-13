@@ -2,13 +2,14 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 import type { MintConfig, Navigation, NavigationGroup } from "@mintlify/models";
 
 const ROOT_DIR = path.join(__dirname, "..");
 const TEMPLATE_DIR = path.join(ROOT_DIR, "docs-template");
 const GENERATED_DIR = path.join(ROOT_DIR, "docs-generated");
 const BASE_CONFIG_PATH = path.join(TEMPLATE_DIR, "docs-base.json");
-const OUTPUT_PATH = path.join(GENERATED_DIR, "docs.json");
 
 function readJsonFile(filePath: string): MintConfig {
   try {
@@ -23,11 +24,35 @@ function readJsonFile(filePath: string): MintConfig {
 function writeJsonFile(filePath: string, data: MintConfig): void {
   try {
     const content = JSON.stringify(data, null, 2);
-    fs.writeFileSync(filePath, content, "utf-8");
-    console.log(`✅ Successfully generated ${filePath}`);
+
+    // Check if file exists and content is the same
+    let shouldWrite = true;
+    if (fs.existsSync(filePath)) {
+      try {
+        const existingContent = fs.readFileSync(filePath, "utf-8");
+        if (existingContent === content) {
+          shouldWrite = false;
+          console.log(`✅ No changes to ${filePath} - skipping write`);
+        }
+      } catch (error) {
+        // If we can't read the existing file, we'll write it
+        shouldWrite = true;
+      }
+    }
+
+    if (shouldWrite) {
+      fs.writeFileSync(filePath, content, "utf-8");
+      console.log(`✅ Successfully generated ${filePath}`);
+    }
   } catch (error) {
     console.error(`Error writing ${filePath}:`, error);
     throw error;
+  }
+}
+
+function ensureDirExists(dirPath: string): void {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 }
 
@@ -79,26 +104,48 @@ function copyRecursively(
       copyRecursively(srcFile, destFile, newRelativePath);
     }
   } else if (srcStat.isFile()) {
-    // Copy file, converting .md to .mdx
+    // Determine destination file path, converting .md to .mdx if needed
     let destFile = dest;
+    let conversionNote = "";
     if (src.endsWith(".md") && !src.endsWith(".mdx")) {
       destFile = dest.replace(/\.md$/, ".mdx");
-      console.log(`📝 Converting ${relativePath} (.md → .mdx)`);
+      conversionNote = " (.md → .mdx)";
     }
-    fs.copyFileSync(src, destFile);
+
+    // Check if destination exists and compare size and mtime
+    let shouldCopy = true;
+    if (fs.existsSync(destFile)) {
+      try {
+        const destStat = fs.lstatSync(destFile);
+        const srcSize = srcStat.size;
+        const destSize = destStat.size;
+        const srcMtime = srcStat.mtime.getTime();
+        const destMtime = destStat.mtime.getTime();
+
+        // Skip copy if size and mtime match
+        if (srcSize === destSize && srcMtime === destMtime) {
+          shouldCopy = false;
+        }
+      } catch (error) {
+        // If we can't stat the destination, we'll copy it
+        shouldCopy = true;
+      }
+    }
+
+    if (shouldCopy) {
+      console.log(`📝 Copying ${relativePath}${conversionNote}`);
+      fs.cpSync(src, destFile, { preserveTimestamps: true });
+    }
   }
 }
 
 function copyAllTemplateFiles(): void {
-  console.log("📁 Copying all template files...");
+  console.log("📁 Copying template files to docs-generated...");
 
-  // Remove and recreate generated directory
-  if (fs.existsSync(GENERATED_DIR)) {
-    fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
-  }
-  fs.mkdirSync(GENERATED_DIR, { recursive: true });
+  // Ensure docs-generated directory exists
+  ensureDirExists(GENERATED_DIR);
 
-  // Copy everything from template (following symlinks, converting .md to .mdx)
+  // Copy everything from template to docs-generated (following symlinks, converting .md to .mdx)
   const templateFiles = fs.readdirSync(TEMPLATE_DIR);
 
   for (const file of templateFiles) {
@@ -275,10 +322,23 @@ function processDocsConfig(
   };
 }
 
-function generateDocs(): void {
+function cleanGeneratedDir(): void {
+  if (fs.existsSync(GENERATED_DIR)) {
+    console.log("🧹 Cleaning docs-generated directory...");
+    fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
+    console.log("✅ Cleaned docs-generated directory");
+  }
+}
+
+function generateDocs(clean: boolean = false): void {
   console.log("🔄 Generating docs...");
 
-  // Copy all template files (following symlinks, converting .md to .mdx)
+  // Clean the generated directory if requested
+  if (clean) {
+    cleanGeneratedDir();
+  }
+
+  // Copy all template files to docs-generated directory (following symlinks, converting .md to .mdx)
   copyAllTemplateFiles();
 
   // Validate base config exists
@@ -326,16 +386,30 @@ function generateDocs(): void {
     logGroup(group);
   });
 
-  // Write the final configuration
-  writeJsonFile(OUTPUT_PATH, mergedConfig);
+  // Write the final configuration to docs-generated directory
+  const outputPath = path.join(GENERATED_DIR, "docs.json");
+  writeJsonFile(outputPath, mergedConfig);
 
   console.log("✨ docs generation complete!");
 }
 
 // CLI execution
 if (require.main === module) {
+  const argv = yargs(hideBin(process.argv))
+    .option("clean", {
+      alias: "c",
+      type: "boolean",
+      description: "Clean the docs-generated directory before generating",
+      default: false,
+    })
+    .help()
+    .alias("help", "h")
+    .version(false)
+    .strict()
+    .parseSync();
+
   try {
-    generateDocs();
+    generateDocs(argv.clean);
   } catch (error) {
     console.error("❌ Error generating docs:", error);
     process.exit(1);
