@@ -31,55 +31,65 @@
     }
   },
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "builder-camp"
-        ]
-      },
-      {
-        "group": "Community",
-        "pages": [
-          "community-code-of-conduct"
-        ]
-      },
-      {
-        "group": "Divvi Protocol",
-        "pages": [
-          "protocol/overview",
-          "protocol/fund-managers",
-          "protocol/contracts",
+        "tab": "Divvi Protocol",
+        "groups": [
           {
-            "group": "KPI calculation",
-            "autogenerate": "calculate-kpi",
+            "group": "Getting Started",
             "pages": [
-              "protocol/calculate-kpi/aave",
-              "protocol/calculate-kpi/aerodrome",
-              "protocol/calculate-kpi/arbitrum",
-              "protocol/calculate-kpi/baseV0",
-              "protocol/calculate-kpi/beefy",
-              "protocol/calculate-kpi/celo-pg",
-              "protocol/calculate-kpi/celoTransactions",
-              "protocol/calculate-kpi/fonbnk",
-              "protocol/calculate-kpi/liskV0",
-              "protocol/calculate-kpi/mantleV0",
-              "protocol/calculate-kpi/morph",
-              "protocol/calculate-kpi/README",
-              "protocol/calculate-kpi/rhino",
-              "protocol/calculate-kpi/scoutGameV0",
-              "protocol/calculate-kpi/somm",
-              "protocol/calculate-kpi/tetherV0",
-              "protocol/calculate-kpi/velodrome"
+              "index",
+              "builder-camp"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "community-code-of-conduct"
+            ]
+          },
+          {
+            "group": "Protocol",
+            "pages": [
+              "protocol/overview",
+              "protocol/fund-managers",
+              "protocol/contracts",
+              {
+                "group": "KPI calculation",
+                "autogenerate": "calculate-kpi",
+                "pages": [
+                  "protocol/calculate-kpi/aave",
+                  "protocol/calculate-kpi/aerodrome",
+                  "protocol/calculate-kpi/arbitrum",
+                  "protocol/calculate-kpi/baseV0",
+                  "protocol/calculate-kpi/beefy",
+                  "protocol/calculate-kpi/celo-pg",
+                  "protocol/calculate-kpi/celoTransactions",
+                  "protocol/calculate-kpi/fonbnk",
+                  "protocol/calculate-kpi/liskV0",
+                  "protocol/calculate-kpi/mantleV0",
+                  "protocol/calculate-kpi/morph",
+                  "protocol/calculate-kpi/README",
+                  "protocol/calculate-kpi/rhino",
+                  "protocol/calculate-kpi/scoutGameV0",
+                  "protocol/calculate-kpi/somm",
+                  "protocol/calculate-kpi/tetherV0",
+                  "protocol/calculate-kpi/velodrome"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "group": "Mobile Framework",
-        "pages": [
-          "mobile-framework/overview",
+        "tab": "Mobile Framework",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "mobile-framework/overview"
+            ]
+          },
           {
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile",

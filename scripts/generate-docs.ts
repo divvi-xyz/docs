@@ -418,22 +418,49 @@ function generateDocs(clean: boolean = false): void {
 
   // Start with base config
   let mergedConfig: MintConfig = { ...baseConfig };
-  const baseNavGroups = (baseConfig.navigation as any)?.groups || [];
 
-  let allNavigation: Navigation = [];
+  // Process navigation structure (tabs or groups)
+  const navigation = baseConfig.navigation as any;
 
-  // Process base navigation groups (handle AUTO_GENERATE_FROM_FOLDER sentinels)
-  for (const group of baseNavGroups) {
-    const processedGroup = processNavigationGroup(group);
-    allNavigation.push(processedGroup);
+  if (navigation?.tabs) {
+    console.log("📑 Processing tabs navigation structure...");
+    mergedConfig.navigation = {
+      tabs: navigation.tabs.map((tab: any) => {
+        console.log(`🔖 Processing tab: ${tab.tab}`);
+        return {
+          ...tab,
+          groups: tab.groups.map((group: any) => processNavigationGroup(group)),
+        };
+      }),
+    } as any;
+  } else if (navigation?.groups) {
+    console.log("📁 Processing groups navigation structure...");
+    mergedConfig.navigation = {
+      groups: navigation.groups.map((group: any) =>
+        processNavigationGroup(group)
+      ),
+    } as any;
+  } else {
+    throw new Error(
+      "Invalid navigation structure: expected either 'tabs' or 'groups'"
+    );
   }
 
-  // Update merged config with processed navigation
-  mergedConfig.navigation = { groups: allNavigation } as any;
-
-  // Log the merged navigation structure
+  // Log the final navigation structure
   console.log("📋 Final navigation structure:");
-  const logGroup = (group: any, indent: string = "  ") => {
+  if (navigation?.tabs) {
+    (mergedConfig.navigation as any).tabs.forEach((tab: any) => {
+      console.log(`📑 Tab: ${tab.tab}`);
+      tab.groups.forEach((group: any) => logGroup(group, "    "));
+    });
+  } else {
+    (mergedConfig.navigation as any).groups.forEach((group: any) =>
+      logGroup(group)
+    );
+  }
+
+  // Helper function for logging navigation structure
+  function logGroup(group: any, indent: string = "  ") {
     console.log(`${indent}📁 ${group.group}:`);
     if (group.pages && Array.isArray(group.pages)) {
       group.pages.forEach((page: any) => {
@@ -446,11 +473,7 @@ function generateDocs(clean: boolean = false): void {
     } else {
       console.log(`${indent}  ⚠️  No pages generated`);
     }
-  };
-
-  allNavigation.forEach((group: any) => {
-    logGroup(group);
-  });
+  }
 
   // Write the final configuration to docs-generated directory
   const outputPath = path.join(GENERATED_DIR, "docs.json");

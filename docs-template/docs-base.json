@@ -31,23 +31,31 @@
     }
   },
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": ["index", "builder-camp"]
+        "tab": "Divvi Protocol",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["index", "builder-camp"]
+          },
+          {
+            "group": "Community",
+            "pages": ["community-code-of-conduct"]
+          },
+          {
+            "group": "Protocol",
+            "autogenerate": "protocol"
+          }
+        ]
       },
       {
-        "group": "Community",
-        "pages": ["community-code-of-conduct"]
-      },
-      {
-        "group": "Protocol",
-        "autogenerate": "protocol"
-      },
-      {
-        "group": "Mobile Framework",
-        "pages": [
-          "mobile-framework/overview",
+        "tab": "Mobile Framework",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["mobile-framework/overview"]
+          },
           {
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile"
