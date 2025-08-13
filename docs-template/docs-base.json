@@ -73,43 +73,7 @@
       "discord": "https://discord.com/invite/EaxZDhMuDn",
       "x": "https://x.com/letsdivvi",
       "github": "https://github.com/divvi-xyz"
-    },
-    "links": [
-      {
-        "header": "Community",
-        "items": [
-          {
-            "label": "Discord",
-            "href": "https://discord.com/invite/EaxZDhMuDn"
-          },
-          {
-            "label": "Twitter",
-            "href": "https://x.com/letsdivvi"
-          },
-          {
-            "label": "Telegram",
-            "href": "https://t.me/letsdivvi"
-          }
-        ]
-      },
-      {
-        "header": "Resources",
-        "items": [
-          {
-            "label": "GitHub",
-            "href": "https://github.com/divvi-xyz"
-          },
-          {
-            "label": "Builder Camp Terms",
-            "href": "https://divvi.xyz/terms"
-          },
-          {
-            "label": "Privacy Policy",
-            "href": "https://valora.xyz/privacy"
-          }
-        ]
-      }
-    ]
+    }
   },
   "search": {
     "prompt": "Search Divvi docs..."
