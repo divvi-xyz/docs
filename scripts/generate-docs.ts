@@ -76,6 +76,63 @@ function prependPrefix(
   };
 }
 
+/**
+ * Convert local markdown links by removing .md/.mdx extensions for Mintlify compatibility
+ * Ensuring local links are relative otherwise they are treated as external links by Mintlify
+ * Processes both .md and .mdx files to handle links consistently
+ * Handles .md, .mdx files and extension-less links in a single pass
+ * Only convert links that don't start with http:// or https://
+ *
+ * Examples:
+ *   [text](README.md) → [text](./README)
+ *   [text](file.mdx) → [text](./file)
+ *   [text](file.md#section) → [text](./file#section)
+ *   [text](folder/file.md) → [text](./folder/file)
+ *   [text](../README.md) → [text](../README)
+ *   [text](./other.md) → [text](./other)
+ *   [text](README) → [text](./README)
+ *   [text](https://example.com/file.md) → [text](https://example.com/file.md) (unchanged)
+ */
+function convertLocalMarkdownLinks(content: string): string {
+  return content.replace(
+    /\[([^\]]*)\]\(([^)]+)\)/g,
+    (match, linkText, linkPath) => {
+      // Skip if this is an external link
+      if (linkPath.startsWith("http://") || linkPath.startsWith("https://")) {
+        return match;
+      }
+
+      // Skip if it's clearly not a local document link (has protocol, query params, etc.)
+      if (
+        linkPath.includes("://") ||
+        linkPath.includes("?") ||
+        linkPath.includes("=")
+      ) {
+        return match;
+      }
+
+      let convertedPath = linkPath;
+
+      // Remove .md/.mdx extensions while preserving any anchor fragments
+      if (linkPath.includes(".md")) {
+        convertedPath = linkPath.replace(/\.mdx?(#|$)/, "$1");
+      }
+
+      // Add ./ prefix for relative links to make them explicitly relative
+      // This prevents Mintlify from treating them as external links
+      if (
+        !convertedPath.startsWith("./") &&
+        !convertedPath.startsWith("/") &&
+        !convertedPath.startsWith("../")
+      ) {
+        convertedPath = "./" + convertedPath;
+      }
+
+      return `[${linkText}](${convertedPath})`;
+    }
+  );
+}
+
 function copyRecursively(
   src: string,
   dest: string,
@@ -107,34 +164,43 @@ function copyRecursively(
     // Determine destination file path, converting .md to .mdx if needed
     let destFile = dest;
     let conversionNote = "";
-    if (src.endsWith(".md") && !src.endsWith(".mdx")) {
+    const isMarkdownFile = src.endsWith(".md") && !src.endsWith(".mdx");
+    const isMdxFile = src.endsWith(".mdx");
+    const needsLinkProcessing = isMarkdownFile || isMdxFile;
+    if (isMarkdownFile) {
       destFile = dest.replace(/\.md$/, ".mdx");
       conversionNote = " (.md → .mdx)";
     }
 
-    // Check if destination exists and compare size and mtime
+    // Check if destination exists and compare mtime
     let shouldCopy = true;
     if (fs.existsSync(destFile)) {
       try {
         const destStat = fs.lstatSync(destFile);
-        const srcSize = srcStat.size;
-        const destSize = destStat.size;
-        const srcMtime = srcStat.mtime.getTime();
-        const destMtime = destStat.mtime.getTime();
-
-        // Skip copy if size and mtime match
-        if (srcSize === destSize && srcMtime === destMtime) {
+        // If dest has same mtime as source, skip (works for .md, .mdx, and other files)
+        if (srcStat.mtime.getTime() === destStat.mtime.getTime()) {
           shouldCopy = false;
         }
       } catch (error) {
-        // If we can't stat the destination, we'll copy it
+        // If we can't stat destination, we'll copy it
         shouldCopy = true;
       }
     }
 
     if (shouldCopy) {
       console.log(`📝 Copying ${relativePath}${conversionNote}`);
-      fs.cpSync(src, destFile, { preserveTimestamps: true });
+
+      if (needsLinkProcessing) {
+        // Read, convert links, write (for both .md and .mdx files)
+        const content = fs.readFileSync(src, "utf-8");
+        const convertedContent = convertLocalMarkdownLinks(content);
+        fs.writeFileSync(destFile, convertedContent, "utf-8");
+        // Preserve timestamps (critical for mtime optimization)
+        fs.utimesSync(destFile, srcStat.atime, srcStat.mtime);
+      } else {
+        // Copy, preserve timestamps
+        fs.cpSync(src, destFile, { preserveTimestamps: true });
+      }
     }
   }
 }
