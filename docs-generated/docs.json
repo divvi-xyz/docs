@@ -94,7 +94,6 @@
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile",
             "pages": [
-              "mobile-framework/divvi-mobile/_reference",
               "mobile-framework/divvi-mobile/architecture",
               "mobile-framework/divvi-mobile/configuration",
               "mobile-framework/divvi-mobile/getting-started",

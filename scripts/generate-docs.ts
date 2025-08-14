@@ -307,6 +307,7 @@ function generatePagesFromFolder(
         (file.name.endsWith(".md") || file.name.endsWith(".mdx"))
     )
     .filter((file) => file.name !== "docs.json")
+    .filter((file) => !file.name.startsWith("_"))
     .sort((a, b) => a.name.localeCompare(b.name))
     .forEach((file) => {
       const fileName = file.name.replace(/\.(md|mdx)$/, "");
