@@ -7,6 +7,9 @@ import { hideBin } from "yargs/helpers";
 import matter from "gray-matter";
 import type { MintConfig, Navigation, NavigationGroup } from "@mintlify/models";
 
+// Global cache for sidebar positions collected during file processing
+const sidebarPositions = new Map<string, number>();
+
 const ROOT_DIR = path.join(__dirname, "..");
 const TEMPLATE_DIR = path.join(ROOT_DIR, "docs-template");
 const GENERATED_DIR = path.join(ROOT_DIR, "docs-generated");
@@ -91,12 +94,20 @@ function extractFirstHeading(content: string): string | null {
  * Process md/mdx content to ensure frontmatter has a title and convert Docusaurus properties to Mintlify
  * If no title exists in frontmatter, extract it from the first # heading and remove the heading from content
  * Convert sidebar_label to sidebarTitle for Mintlify compatibility
+ * Also collects sidebar_position for navigation sorting
  */
-function processMarkdownFrontmatter(content: string): string {
+function processMarkdownFrontmatter(content: string, filePath: string): string {
   try {
     const parsed = matter(content);
     let needsUpdate = false;
     let contentToUse = parsed.content;
+
+    // Collect sidebar_position for navigation sorting
+    if (typeof parsed.data.sidebar_position === "number") {
+      // Use the destination file path as key for exact matching during navigation generation
+      // Debug: console.log(`Storing sidebar_position ${parsed.data.sidebar_position} for destFile: ${filePath}`);
+      sidebarPositions.set(filePath, parsed.data.sidebar_position);
+    }
 
     // Start with existing frontmatter
     const newFrontmatter = { ...parsed.data };
@@ -253,7 +264,7 @@ function copyRecursively(
       if (needsLinkProcessing) {
         // Read, process frontmatter, convert links, write (for both .md and .mdx files)
         const content = fs.readFileSync(src, "utf-8");
-        const processedContent = processMarkdownFrontmatter(content);
+        const processedContent = processMarkdownFrontmatter(content, destFile);
         const convertedContent = convertLocalMarkdownLinks(processedContent);
         fs.writeFileSync(destFile, convertedContent, "utf-8");
         // Preserve timestamps (critical for mtime optimization)
@@ -288,6 +299,14 @@ function copyAllTemplateFiles(): void {
   }
 }
 
+/**
+ * Get cached sidebar position for a file
+ * Returns Infinity if not found (for files without sidebar_position)
+ */
+function getSidebarPosition(filePath: string): number {
+  return sidebarPositions.get(filePath) ?? Infinity;
+}
+
 function generatePagesFromFolder(
   folderPath: string,
   prefix: string = ""
@@ -308,7 +327,22 @@ function generatePagesFromFolder(
     )
     .filter((file) => file.name !== "docs.json")
     .filter((file) => !file.name.startsWith("_"))
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => {
+      // Sort by sidebar_position first, then alphabetically
+      const pathA = path.join(folderPath, a.name);
+      const pathB = path.join(folderPath, b.name);
+      const positionA = getSidebarPosition(pathA);
+      const positionB = getSidebarPosition(pathB);
+
+      // Debug: console.log(`Sorting ${a.name}: position=${positionA}, lookup=${pathA}`);
+
+      if (positionA !== positionB) {
+        return positionA - positionB;
+      }
+
+      // If positions are equal, sort alphabetically
+      return a.name.localeCompare(b.name);
+    })
     .forEach((file) => {
       const fileName = file.name.replace(/\.(md|mdx)$/, "");
       pages.push(prefix ? `${prefix}/${fileName}` : fileName);

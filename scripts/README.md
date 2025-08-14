@@ -79,7 +79,8 @@ The script automatically processes markdown frontmatter during `.md→.mdx` conv
 ### **Docusaurus Migration**
 
 - **`sidebar_label`** → **`sidebarTitle`**: Automatic conversion for proper Mintlify sidebar navigation
-- **Preservation**: Other frontmatter properties (like `sidebar_position`) are kept intact
+- **`sidebar_position`**: Used for auto-generated navigation ordering (files without position appear at end)
+- **Preservation**: Other frontmatter properties are kept intact
 
 ## 🚀 **Usage**
 

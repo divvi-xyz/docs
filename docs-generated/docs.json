@@ -94,9 +94,9 @@
             "group": "Creating a new project",
             "autogenerate": "mobile-framework/divvi-mobile",
             "pages": [
-              "mobile-framework/divvi-mobile/architecture",
-              "mobile-framework/divvi-mobile/configuration",
               "mobile-framework/divvi-mobile/getting-started",
+              "mobile-framework/divvi-mobile/configuration",
+              "mobile-framework/divvi-mobile/architecture",
               {
                 "group": "reference",
                 "pages": [
@@ -151,14 +151,14 @@
             "autogenerate": "mobile-framework/hooks",
             "pages": [
               "mobile-framework/hooks/index",
-              "mobile-framework/hooks/live-preview",
               "mobile-framework/hooks/platform",
+              "mobile-framework/hooks/live-preview",
               {
                 "group": "types",
                 "pages": [
-                  "mobile-framework/hooks/types/name-resolution",
                   "mobile-framework/hooks/types/position",
-                  "mobile-framework/hooks/types/shortcut"
+                  "mobile-framework/hooks/types/shortcut",
+                  "mobile-framework/hooks/types/name-resolution"
                 ]
               }
             ]
