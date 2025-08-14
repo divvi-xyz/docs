@@ -39,17 +39,25 @@ function loadSidebarPositions(): void {
 }
 
 /**
- * Save sidebar positions to cache file
+ * Save sidebar positions to cache file (only if changed)
  */
 function saveSidebarPositions(): void {
   try {
     const cacheData = Object.fromEntries(sidebarPositions);
-    fs.writeFileSync(
-      SIDEBAR_CACHE_PATH,
-      JSON.stringify(cacheData, null, 2),
-      "utf-8"
-    );
-    console.log(`💾 Saved ${sidebarPositions.size} sidebar positions to cache`);
+    const newContent = JSON.stringify(cacheData, null, 2);
+
+    // Check if content has changed
+    let existingContent = "";
+    if (fs.existsSync(SIDEBAR_CACHE_PATH)) {
+      existingContent = fs.readFileSync(SIDEBAR_CACHE_PATH, "utf-8");
+    }
+
+    if (newContent !== existingContent) {
+      fs.writeFileSync(SIDEBAR_CACHE_PATH, newContent, "utf-8");
+      console.log(
+        `💾 Saved ${sidebarPositions.size} sidebar positions to cache`
+      );
+    }
   } catch (error) {
     console.warn("Warning: Failed to save sidebar positions cache:", error);
   }
