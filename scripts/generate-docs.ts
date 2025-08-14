@@ -14,6 +14,46 @@ const ROOT_DIR = path.join(__dirname, "..");
 const TEMPLATE_DIR = path.join(ROOT_DIR, "docs-template");
 const GENERATED_DIR = path.join(ROOT_DIR, "docs-generated");
 const BASE_CONFIG_PATH = path.join(TEMPLATE_DIR, "docs-base.json");
+const SIDEBAR_CACHE_PATH = path.join(GENERATED_DIR, ".sidebar-positions.json");
+
+/**
+ * Load sidebar positions from cache file
+ */
+function loadSidebarPositions(): void {
+  try {
+    if (fs.existsSync(SIDEBAR_CACHE_PATH)) {
+      const content = fs.readFileSync(SIDEBAR_CACHE_PATH, "utf-8");
+      const cached = JSON.parse(content);
+      for (const [relativePath, position] of Object.entries(cached)) {
+        if (typeof position === "number") {
+          sidebarPositions.set(relativePath, position);
+        }
+      }
+      console.log(
+        `📋 Loaded ${sidebarPositions.size} cached sidebar positions`
+      );
+    }
+  } catch (error) {
+    console.warn("Warning: Failed to load sidebar positions cache:", error);
+  }
+}
+
+/**
+ * Save sidebar positions to cache file
+ */
+function saveSidebarPositions(): void {
+  try {
+    const cacheData = Object.fromEntries(sidebarPositions);
+    fs.writeFileSync(
+      SIDEBAR_CACHE_PATH,
+      JSON.stringify(cacheData, null, 2),
+      "utf-8"
+    );
+    console.log(`💾 Saved ${sidebarPositions.size} sidebar positions to cache`);
+  } catch (error) {
+    console.warn("Warning: Failed to save sidebar positions cache:", error);
+  }
+}
 
 function readJsonFile(filePath: string): MintConfig {
   try {
@@ -102,11 +142,10 @@ function processMarkdownFrontmatter(content: string, filePath: string): string {
     let needsUpdate = false;
     let contentToUse = parsed.content;
 
-    // Collect sidebar_position for navigation sorting
+    // Collect sidebar_position for navigation sorting (using relative path)
     if (typeof parsed.data.sidebar_position === "number") {
-      // Use the destination file path as key for exact matching during navigation generation
-      // Debug: console.log(`Storing sidebar_position ${parsed.data.sidebar_position} for destFile: ${filePath}`);
-      sidebarPositions.set(filePath, parsed.data.sidebar_position);
+      const relativePath = path.relative(GENERATED_DIR, filePath);
+      sidebarPositions.set(relativePath, parsed.data.sidebar_position);
     }
 
     // Start with existing frontmatter
@@ -304,7 +343,8 @@ function copyAllTemplateFiles(): void {
  * Returns Infinity if not found (for files without sidebar_position)
  */
 function getSidebarPosition(filePath: string): number {
-  return sidebarPositions.get(filePath) ?? Infinity;
+  const relativePath = path.relative(GENERATED_DIR, filePath);
+  return sidebarPositions.get(relativePath) ?? Infinity;
 }
 
 function generatePagesFromFolder(
@@ -500,6 +540,9 @@ function generateDocs(clean: boolean = false): void {
     cleanGeneratedDir();
   }
 
+  // Load cached sidebar positions before file processing
+  loadSidebarPositions();
+
   // Copy all template files to docs-generated directory (following symlinks, converting .md to .mdx)
   copyAllTemplateFiles();
 
@@ -574,6 +617,9 @@ function generateDocs(clean: boolean = false): void {
   // Write the final configuration to docs-generated directory
   const outputPath = path.join(GENERATED_DIR, "docs.json");
   writeJsonFile(outputPath, mergedConfig);
+
+  // Save sidebar positions to cache for future runs
+  saveSidebarPositions();
 
   console.log("✨ docs generation complete!");
 }
