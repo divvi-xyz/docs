@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import matter from "gray-matter";
 import type { MintConfig, Navigation, NavigationGroup } from "@mintlify/models";
 
 const ROOT_DIR = path.join(__dirname, "..");
@@ -74,6 +75,65 @@ function prependPrefix(
         : prependPrefix(entry, prefix)
     ),
   };
+}
+
+/**
+ * Extract the first H1 heading from markdown content
+ * Returns the heading text without the # symbol and leading/trailing whitespace
+ */
+function extractFirstHeading(content: string): string | null {
+  // Match the first # heading (H1) - allow for whitespace before #
+  const headingMatch = content.match(/^\s*#\s+(.+)$/m);
+  return headingMatch ? headingMatch[1].trim() : null;
+}
+
+/**
+ * Process md/mdx content to ensure frontmatter has a title and convert Docusaurus properties to Mintlify
+ * If no title exists in frontmatter, extract it from the first # heading and remove the heading from content
+ * Convert sidebar_label to sidebarTitle for Mintlify compatibility
+ */
+function processMarkdownFrontmatter(content: string): string {
+  try {
+    const parsed = matter(content);
+    let needsUpdate = false;
+    let contentToUse = parsed.content;
+
+    // Start with existing frontmatter
+    const newFrontmatter = { ...parsed.data };
+
+    // Convert Docusaurus sidebar_label to Mintlify sidebarTitle
+    if (parsed.data.sidebar_label && !parsed.data.sidebarTitle) {
+      newFrontmatter.sidebarTitle = parsed.data.sidebar_label;
+      delete newFrontmatter.sidebar_label;
+      needsUpdate = true;
+    }
+
+    // Handle title extraction if no title exists
+    if (!parsed.data.title) {
+      const firstHeading = extractFirstHeading(parsed.content);
+      if (firstHeading) {
+        // Remove the first heading from content to avoid duplication
+        // Match the first # heading line and remove it along with any trailing newlines
+        contentToUse = parsed.content.replace(/^\s*#\s+.+$\n*/m, "");
+        newFrontmatter.title = firstHeading;
+        needsUpdate = true;
+      }
+    }
+
+    // If no changes needed, return original content
+    if (!needsUpdate) {
+      return content;
+    }
+
+    // Reconstruct the file with updated frontmatter
+    return matter.stringify(contentToUse, newFrontmatter);
+  } catch (error) {
+    console.warn(
+      `Warning: Failed to process frontmatter, using original content:`,
+      error
+    );
+    return content;
+  }
 }
 
 /**
@@ -191,9 +251,10 @@ function copyRecursively(
       console.log(`📝 Copying ${relativePath}${conversionNote}`);
 
       if (needsLinkProcessing) {
-        // Read, convert links, write (for both .md and .mdx files)
+        // Read, process frontmatter, convert links, write (for both .md and .mdx files)
         const content = fs.readFileSync(src, "utf-8");
-        const convertedContent = convertLocalMarkdownLinks(content);
+        const processedContent = processMarkdownFrontmatter(content);
+        const convertedContent = convertLocalMarkdownLinks(processedContent);
         fs.writeFileSync(destFile, convertedContent, "utf-8");
         // Preserve timestamps (critical for mtime optimization)
         fs.utimesSync(destFile, srcStat.atime, srcStat.mtime);

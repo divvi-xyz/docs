@@ -2,7 +2,7 @@
 
 ## `generate-docs.ts`
 
-This script generates Mintlify-ready documentation in `docs-generated/` by processing templates and submodules.
+This script generates Mintlify-ready documentation in `docs-generated/` by processing templates and submodules. It automatically handles Docusaurus to Mintlify migration, including frontmatter conversion and title extraction.
 
 ## 🏗️ **Architecture**
 
@@ -61,8 +61,25 @@ Auto-generates navigation from folder structure:
 - **Template-based**: Clean separation of manual vs generated content
 - **Symlink-friendly**: Use symlinks for development, get real files for Mintlify
 - **Auto-generation**: Generate nested navigation from folder structure
-- **MD→MDX conversion**: Automatic file conversion
+- **MD→MDX conversion**: Automatic file conversion with frontmatter processing
+- **Docusaurus migration**: Automatically converts Docusaurus frontmatter to Mintlify format
+- **Title extraction**: Extracts titles from `# Heading` when missing from frontmatter
 - **Recursive processing**: Works in root and nested groups
+
+## 📝 **Frontmatter Processing**
+
+The script automatically processes markdown frontmatter during `.md→.mdx` conversion to ensure Mintlify compatibility:
+
+### **Title Extraction**
+
+- **Missing titles**: Extracts title from first `# Heading` and adds to frontmatter
+- **Duplicate removal**: Removes the `# Heading` from content to avoid duplication
+- **Existing titles**: Preserved unchanged
+
+### **Docusaurus Migration**
+
+- **`sidebar_label`** → **`sidebarTitle`**: Automatic conversion for proper Mintlify sidebar navigation
+- **Preservation**: Other frontmatter properties (like `sidebar_position`) are kept intact
 
 ## 🚀 **Usage**
 
@@ -96,6 +113,8 @@ That's it! The script will automatically:
 ## 🎯 **Benefits**
 
 - **CI-friendly**: Generated output is deterministic and Mintlify-compatible
+- **Migration-ready**: Seamless Docusaurus to Mintlify conversion
+- **Zero-config**: Automatic frontmatter processing and title extraction
 - **Flexible**: Mix manual navigation with auto-generated content
 - **Scalable**: Easy to add new submodules
 - **Clean separation**: Templates vs final output
