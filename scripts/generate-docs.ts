@@ -376,13 +376,19 @@ function generatePagesFromFolder(
     .filter((file) => file.name !== "docs.json")
     .filter((file) => !file.name.startsWith("_"))
     .sort((a, b) => {
-      // Sort by sidebar_position first, then alphabetically
-      const pathA = path.join(folderPath, a.name);
-      const pathB = path.join(folderPath, b.name);
-      const positionA = getSidebarPosition(pathA);
-      const positionB = getSidebarPosition(pathB);
+      const isReadmeOrIndex = (name: string) =>
+        /^(readme|index)\.(md|mdx)$/i.test(name);
 
-      // Debug: console.log(`Sorting ${a.name}: position=${positionA}, lookup=${pathA}`);
+      // README/index files always come first
+      const aPriority = isReadmeOrIndex(a.name);
+      const bPriority = isReadmeOrIndex(b.name);
+
+      if (aPriority !== bPriority) return aPriority ? -1 : 1;
+      if (aPriority) return a.name.localeCompare(b.name); // README before index alphabetically
+
+      // Regular files: sort by sidebar_position when available
+      const positionA = getSidebarPosition(path.join(folderPath, a.name));
+      const positionB = getSidebarPosition(path.join(folderPath, b.name));
 
       if (positionA !== positionB) {
         return positionA - positionB;

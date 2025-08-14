@@ -58,6 +58,7 @@
                 "group": "KPI calculation",
                 "autogenerate": "calculate-kpi",
                 "pages": [
+                  "protocol/calculate-kpi/README",
                   "protocol/calculate-kpi/aave",
                   "protocol/calculate-kpi/aerodrome",
                   "protocol/calculate-kpi/arbitrum",
@@ -69,7 +70,6 @@
                   "protocol/calculate-kpi/liskV0",
                   "protocol/calculate-kpi/mantleV0",
                   "protocol/calculate-kpi/morph",
-                  "protocol/calculate-kpi/README",
                   "protocol/calculate-kpi/rhino",
                   "protocol/calculate-kpi/scoutGameV0",
                   "protocol/calculate-kpi/somm",
