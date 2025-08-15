@@ -39,8 +39,7 @@
           {
             "group": "Getting started",
             "pages": [
-              "protocol/index",
-              "protocol/builder-camp"
+              "protocol/index"
             ]
           },
           {
