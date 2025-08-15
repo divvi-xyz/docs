@@ -524,17 +524,16 @@ function processDocsConfig(
     return processNavigationGroup(navGroups[0], prefix);
   }
 
-  // If multiple groups, we need to return a wrapper group
-  // For now, let's merge them into a single group
-  const allPages: any[] = [];
+  // If multiple groups, preserve them as nested groups
+  const processedGroups: any[] = [];
   for (const group of navGroups) {
     const processedGroup = processNavigationGroup(group, prefix);
-    allPages.push(...processedGroup.pages);
+    processedGroups.push(processedGroup);
   }
 
   return {
     group: config.name || "Documentation",
-    pages: allPages,
+    pages: processedGroups,
   };
 }
 
@@ -580,10 +579,31 @@ function generateDocs(clean: boolean = false): void {
     mergedConfig.navigation = {
       tabs: navigation.tabs.map((tab: any) => {
         console.log(`🔖 Processing tab: ${tab.tab}`);
-        return {
-          ...tab,
-          groups: tab.groups.map((group: any) => processNavigationGroup(group)),
-        };
+
+        // Handle tab-level autogeneration
+        if (tab.autogenerate) {
+          console.log(
+            `🤖 Auto-generating content for tab: ${tab.tab} from folder: ${tab.autogenerate}`
+          );
+          const processedTab = processNavigationGroup(tab);
+          return {
+            ...tab,
+            groups: processedTab.pages,
+          };
+        }
+
+        // Handle groups within tab
+        if (tab.groups) {
+          return {
+            ...tab,
+            groups: tab.groups.map((group: any) =>
+              processNavigationGroup(group)
+            ),
+          };
+        }
+
+        // Return tab as-is if no autogenerate or groups
+        return tab;
       }),
     } as any;
   } else if (navigation?.groups) {

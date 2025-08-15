@@ -34,28 +34,34 @@
     "tabs": [
       {
         "tab": "Divvi Protocol",
+        "autogenerate": "protocol",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Getting started",
             "pages": [
-              "index",
-              "builder-camp"
+              "protocol/index",
+              "protocol/builder-camp"
             ]
           },
           {
-            "group": "Community",
-            "pages": [
-              "community-code-of-conduct"
-            ]
-          },
-          {
-            "group": "Protocol",
+            "group": "How-to guides",
             "pages": [
               "protocol/overview",
-              "protocol/fund-managers",
+              "protocol/fund-managers"
+            ]
+          },
+          {
+            "group": "Explanation",
+            "pages": [
+              "protocol/yellow-paper"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
               "protocol/contracts",
               {
-                "group": "KPI calculation",
+                "group": "KPI calculations",
                 "autogenerate": "calculate-kpi",
                 "pages": [
                   "protocol/calculate-kpi/README",
@@ -77,6 +83,12 @@
                   "protocol/calculate-kpi/velodrome"
                 ]
               }
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "protocol/community-code-of-conduct"
             ]
           }
         ]
@@ -184,5 +196,11 @@
   },
   "search": {
     "prompt": "Search Divvi docs..."
-  }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/protocol"
+    }
+  ]
 }

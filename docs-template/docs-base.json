@@ -34,20 +34,7 @@
     "tabs": [
       {
         "tab": "Divvi Protocol",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": ["index", "builder-camp"]
-          },
-          {
-            "group": "Community",
-            "pages": ["community-code-of-conduct"]
-          },
-          {
-            "group": "Protocol",
-            "autogenerate": "protocol"
-          }
-        ]
+        "autogenerate": "protocol"
       },
       {
         "tab": "Mobile Framework",
@@ -85,5 +72,11 @@
   },
   "search": {
     "prompt": "Search Divvi docs..."
-  }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/protocol"
+    }
+  ]
 }
