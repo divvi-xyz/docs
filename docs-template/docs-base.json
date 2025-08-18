@@ -78,8 +78,5 @@
       "source": "/",
       "destination": "/protocol"
     }
-  ],
-  "feedback": {
-    "suggestEdit": true
-  }
+  ]
 }

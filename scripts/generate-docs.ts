@@ -227,6 +227,61 @@ function processMarkdownFrontmatter(content: string, filePath: string): string {
 }
 
 /**
+ * Inject an "Edit this page" component at the end of markdown content using a Mintlify snippet
+ * Uses the actual source file path to determine the exact repository and file path
+ */
+function injectEditPageComponent(
+  content: string,
+  destFile: string,
+  srcFile: string
+): string {
+  // Get the relative path from the generated directory to determine if we should skip
+  const relativePath = path.relative(GENERATED_DIR, destFile);
+
+  // Skip injection for snippet files
+  if (relativePath.startsWith("snippets/")) {
+    return content;
+  }
+
+  // Determine the edit URL based on the actual source file path
+  function getEditUrlFromSource(sourcePath: string): string {
+    const absoluteSrc = path.resolve(sourcePath);
+    const workspaceRoot = path.resolve(".");
+    const submodulesDir = path.join(workspaceRoot, "submodules");
+
+    // Check if file is in a submodule
+    if (absoluteSrc.startsWith(submodulesDir)) {
+      // Extract submodule name from path
+      const relativePath = path.relative(submodulesDir, absoluteSrc);
+      const submoduleName = relativePath.split(path.sep)[0];
+      const filePathInSubmodule = path.relative(
+        path.join(submodulesDir, submoduleName),
+        absoluteSrc
+      );
+
+      // Repository name matches submodule name
+      const repoName = submoduleName;
+      return `https://github.com/divvi-xyz/${repoName}/edit/main/${filePathInSubmodule}`;
+    } else {
+      // File is in main docs repository
+      const relativeToRoot = path.relative(workspaceRoot, absoluteSrc);
+      return `https://github.com/divvi-xyz/docs/edit/main/${relativeToRoot}`;
+    }
+  }
+
+  const editUrl = getEditUrlFromSource(srcFile);
+
+  // Import and use the edit page snippet with the editUrl prop
+  const editComponent = `
+
+import { EditPage } from '/snippets/edit-page.mdx';
+
+<EditPage editUrl="${editUrl}" />`;
+
+  return content + editComponent;
+}
+
+/**
  * Convert local markdown links by removing .md/.mdx extensions for Mintlify compatibility
  * Ensuring local links are relative otherwise they are treated as external links by Mintlify
  * Processes both .md and .mdx files to handle links consistently
@@ -341,11 +396,16 @@ function copyRecursively(
       console.log(`📝 Copying ${relativePath}${conversionNote}`);
 
       if (needsLinkProcessing) {
-        // Read, process frontmatter, convert links, write (for both .md and .mdx files)
+        // Read, process frontmatter, convert links, inject edit component, write (for both .md and .mdx files)
         const content = fs.readFileSync(src, "utf-8");
         const processedContent = processMarkdownFrontmatter(content, destFile);
         const convertedContent = convertLocalMarkdownLinks(processedContent);
-        fs.writeFileSync(destFile, convertedContent, "utf-8");
+        const finalContent = injectEditPageComponent(
+          convertedContent,
+          destFile,
+          src
+        );
+        fs.writeFileSync(destFile, finalContent, "utf-8");
         // Preserve timestamps (critical for mtime optimization)
         fs.utimesSync(destFile, srcStat.atime, srcStat.mtime);
       } else {
