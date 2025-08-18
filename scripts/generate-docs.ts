@@ -5,6 +5,7 @@ import * as path from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import matter from "gray-matter";
+import { execSync } from "child_process";
 import type { MintConfig as MintConfigOriginal } from "@mintlify/models";
 
 // Navigation types from @mintlify/models are incomplete so here we define our own
@@ -67,6 +68,49 @@ function loadSidebarPositions(): void {
     }
   } catch (error) {
     console.warn("Warning: Failed to load sidebar positions cache:", error);
+  }
+}
+
+/**
+ * Get the last modification date of a file from Git history
+ * Returns the date in ISO format or null if not found
+ * Handles files in submodules by running git commands in the correct directory
+ */
+function getGitLastModified(filePath: string): string | null {
+  try {
+    const absolutePath = path.resolve(filePath);
+    const workspaceRoot = path.resolve(".");
+    const submodulesDir = path.join(workspaceRoot, "submodules");
+
+    let gitCwd = workspaceRoot;
+    let relativePath = path.relative(workspaceRoot, absolutePath);
+
+    // Check if file is in a submodule
+    if (absolutePath.startsWith(submodulesDir)) {
+      const relativeToSubmodules = path.relative(submodulesDir, absolutePath);
+      const submoduleName = relativeToSubmodules.split(path.sep)[0];
+      const submoduleRoot = path.join(submodulesDir, submoduleName);
+
+      // Run git command in the submodule directory
+      gitCwd = submoduleRoot;
+      relativePath = path.relative(submoduleRoot, absolutePath);
+    }
+
+    const result = execSync(`git log -1 --format="%ci" -- "${relativePath}"`, {
+      encoding: "utf8",
+      cwd: gitCwd,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+
+    if (result) {
+      // Convert git date format to ISO string
+      const date = new Date(result);
+      return date.toISOString();
+    }
+    return null;
+  } catch (error) {
+    // If git command fails, return null
+    return null;
   }
 }
 
@@ -270,13 +314,14 @@ function injectEditPageComponent(
   }
 
   const editUrl = getEditUrlFromSource(srcFile);
+  const lastModified = getGitLastModified(srcFile);
 
-  // Import and use the edit page snippet with the editUrl prop
+  // Import and use the edit page snippet with the editUrl and lastModified props
   const editComponent = `
 
-import { EditPage } from '/snippets/edit-page.mdx';
+import { EditPage } from '/snippets/edit-page.jsx';
 
-<EditPage editUrl="${editUrl}" />`;
+<EditPage editUrl="${editUrl}" lastModified="${lastModified || ""}" />`;
 
   return content + editComponent;
 }
