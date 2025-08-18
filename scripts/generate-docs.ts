@@ -5,7 +5,39 @@ import * as path from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import matter from "gray-matter";
-import type { MintConfig, Navigation, NavigationGroup } from "@mintlify/models";
+import type { MintConfig as MintConfigOriginal } from "@mintlify/models";
+
+// Navigation types from @mintlify/models are incomplete so here we define our own
+// With the subset of fields we use (tabs, groups, pages)
+type Navigation = {
+  tabs?: NavigationTab[];
+  groups?: NavigationGroup[];
+  pages?: NavigationItem[];
+};
+
+type BaseNavigation = {
+  icon?: string;
+  tag?: string;
+  autogenerate?: string; // Custom field: auto-generate content from folder structure
+};
+
+type NavigationGroup = BaseNavigation & {
+  group: string;
+  pages?: NavigationItem[];
+};
+
+type NavigationTab = BaseNavigation & {
+  tab: string;
+  href?: string;
+  groups?: NavigationGroup[];
+  pages?: NavigationItem[];
+};
+
+type NavigationItem = string | NavigationGroup;
+
+type MintConfig = Omit<MintConfigOriginal, "navigation"> & {
+  navigation: Navigation;
+};
 
 // Global cache for sidebar positions collected during file processing
 const sidebarPositions = new Map<string, number>();
@@ -63,7 +95,7 @@ function saveSidebarPositions(): void {
   }
 }
 
-function readJsonFile(filePath: string): MintConfig {
+function readMintConfig(filePath: string): MintConfig {
   try {
     const content = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(content);
@@ -73,7 +105,7 @@ function readJsonFile(filePath: string): MintConfig {
   }
 }
 
-function writeJsonFile(filePath: string, data: MintConfig): void {
+function writeMintConfig(filePath: string, data: MintConfig): void {
   try {
     const content = JSON.stringify(data, null, 2);
 
@@ -358,13 +390,13 @@ function getSidebarPosition(filePath: string): number {
 function generatePagesFromFolder(
   folderPath: string,
   prefix: string = ""
-): (string | any)[] {
+): NavigationItem[] {
   if (!fs.existsSync(folderPath)) {
     return [];
   }
 
   const files = fs.readdirSync(folderPath, { withFileTypes: true });
-  const pages: (string | any)[] = [];
+  const pages: NavigationItem[] = [];
 
   // First, add all .md/.mdx files in this folder
   files
@@ -423,7 +455,7 @@ function generatePagesFromFolder(
   return pages;
 }
 
-function countPagesRecursively(pages: (string | any)[]): number {
+function countPagesRecursively(pages: NavigationItem[]): number {
   let count = 0;
   for (const page of pages) {
     if (typeof page === "string") {
@@ -435,74 +467,88 @@ function countPagesRecursively(pages: (string | any)[]): number {
   return count;
 }
 
+// Unified autogeneration logic for both groups and tabs
+function processAutogeneration(
+  item: { autogenerate?: string; [key: string]: any },
+  currentPrefix?: string
+): NavigationItem[] {
+  const autoGenerateFolder = item.autogenerate!;
+  let folderPath: string;
+  let prefix: string | undefined;
+
+  if (currentPrefix) {
+    // We're inside a submodule, look in the prefixed folder
+    folderPath = path.join(GENERATED_DIR, currentPrefix, autoGenerateFolder);
+    prefix = `${currentPrefix}/${autoGenerateFolder}`;
+
+    // If that doesn't exist, try the current prefix folder directly
+    if (!fs.existsSync(folderPath)) {
+      folderPath = path.join(GENERATED_DIR, currentPrefix);
+      prefix = currentPrefix;
+    }
+  } else {
+    // Base navigation, look for the specified folder
+    folderPath = path.join(GENERATED_DIR, autoGenerateFolder);
+    prefix = autoGenerateFolder;
+
+    // If folder doesn't exist, try without prefix (for root-level files)
+    if (!fs.existsSync(folderPath)) {
+      folderPath = GENERATED_DIR;
+      prefix = undefined;
+    }
+  }
+
+  // Check if folder has its own docs.json
+  const docsJsonPath = path.join(folderPath, "docs.json");
+  if (fs.existsSync(docsJsonPath)) {
+    console.log(`📄 Found docs.json in ${folderPath}, using it for navigation`);
+    const subDocsConfig = readMintConfig(docsJsonPath);
+    const processedNavigation = processDocsNavigation(
+      subDocsConfig.navigation,
+      prefix
+    );
+    const groupNavigation = convertNavigationToGroup(
+      processedNavigation,
+      subDocsConfig.name || "Documentation"
+    );
+    return groupNavigation.pages || [];
+  }
+
+  // Generate from folder structure
+  const generatedPages = generatePagesFromFolder(folderPath, prefix);
+  const totalPageCount = countPagesRecursively(generatedPages);
+  console.log(
+    `🤖 Auto-generated ${totalPageCount} pages from folder: ${autoGenerateFolder}`
+  );
+
+  return generatedPages;
+}
+
 function processNavigationGroup(
-  group: any,
+  group: NavigationGroup,
   currentPrefix?: string
 ): NavigationGroup {
-  // Handle autogenerate property
-  const autoGenerateFolder = group.autogenerate;
-
-  if (autoGenerateFolder) {
-    let folderPath: string;
-    let prefix: string | undefined;
-
-    if (currentPrefix) {
-      // We're inside a submodule, look in the prefixed folder
-      folderPath = path.join(GENERATED_DIR, currentPrefix, autoGenerateFolder);
-      prefix = `${currentPrefix}/${autoGenerateFolder}`;
-
-      // If that doesn't exist, try the current prefix folder directly
-      if (!fs.existsSync(folderPath)) {
-        folderPath = path.join(GENERATED_DIR, currentPrefix);
-        prefix = currentPrefix;
-      }
-    } else {
-      // Base navigation, look for the specified folder
-      folderPath = path.join(GENERATED_DIR, autoGenerateFolder);
-      prefix = autoGenerateFolder;
-
-      // If folder doesn't exist, try without prefix (for root-level files)
-      if (!fs.existsSync(folderPath)) {
-        folderPath = GENERATED_DIR;
-        prefix = undefined;
-      }
-    }
-
-    // Check if folder has its own docs.json
-    const docsJsonPath = path.join(folderPath, "docs.json");
-    if (fs.existsSync(docsJsonPath)) {
-      console.log(
-        `📄 Found docs.json in ${folderPath}, using it for navigation`
-      );
-      const subDocsConfig = readJsonFile(docsJsonPath);
-      return processDocsConfig(subDocsConfig, prefix);
-    }
-
-    // Generate from folder structure
-    const generatedPages = generatePagesFromFolder(folderPath, prefix);
-    const totalPageCount = countPagesRecursively(generatedPages);
-    console.log(
-      `🤖 Auto-generated ${totalPageCount} pages for ${group.group} from folder: ${autoGenerateFolder}`
-    );
-
+  // Handle autogeneration
+  if (group.autogenerate) {
+    const generatedPages = processAutogeneration(group, currentPrefix);
     return {
       ...group,
       pages: generatedPages,
     };
   }
 
-  // Handle regular navigation group
-  if (Array.isArray(group.pages)) {
+  // Handle regular pages
+  if (group.pages) {
     if (currentPrefix) {
       return prependPrefix(group, currentPrefix);
     } else {
-      // Root-level group - still need to process nested autogenerate groups
+      // Process nested groups recursively
       return {
         ...group,
-        pages: group.pages.map((entry: any) =>
+        pages: group.pages.map((entry) =>
           typeof entry === "string"
             ? entry
-            : processNavigationGroup(entry as any, currentPrefix)
+            : processNavigationGroup(entry, currentPrefix)
         ),
       };
     }
@@ -511,29 +557,129 @@ function processNavigationGroup(
   return group;
 }
 
-function processDocsConfig(
-  config: MintConfig,
+function processNavigationTab(
+  tab: NavigationTab,
+  currentPrefix?: string
+): NavigationTab {
+  // Handle autogeneration
+  if (tab.autogenerate) {
+    const generatedPages = processAutogeneration(tab, currentPrefix);
+    return {
+      ...tab,
+      pages: generatedPages,
+    };
+  }
+
+  // Handle groups within tab
+  if (tab.groups) {
+    return {
+      ...tab,
+      groups: tab.groups.map((group) =>
+        processNavigationGroup(group, currentPrefix)
+      ),
+    };
+  }
+
+  // Handle pages within tab
+  if (tab.pages) {
+    return {
+      ...tab,
+      pages: tab.pages.map((entry) =>
+        typeof entry === "string"
+          ? entry
+          : processNavigationGroup(entry, currentPrefix)
+      ),
+    };
+  }
+
+  return tab;
+}
+
+function processDocsNavigation(
+  navigation: Navigation,
   prefix?: string
+): Navigation {
+  // Process tabs
+  if (navigation.tabs) {
+    console.log("📑 Processing tabs navigation structure...");
+    return {
+      tabs: navigation.tabs.map((tab) => {
+        console.log(`🔖 Processing tab: ${tab.tab}`);
+        return processNavigationTab(tab, prefix);
+      }),
+    };
+  }
+
+  // Process groups
+  if (navigation.groups) {
+    console.log("📁 Processing groups navigation structure...");
+    return {
+      groups: navigation.groups.map((group) =>
+        processNavigationGroup(group, prefix)
+      ),
+    };
+  }
+
+  // Process pages
+  if (navigation.pages) {
+    console.log("📄 Processing pages navigation structure...");
+    return {
+      pages: navigation.pages.map((entry) =>
+        typeof entry === "string"
+          ? entry
+          : processNavigationGroup(entry, prefix)
+      ),
+    };
+  }
+
+  throw new Error(
+    "Invalid navigation structure: expected 'tabs', 'groups', or 'pages'"
+  );
+}
+
+function convertNavigationToGroup(
+  navigation: Navigation,
+  groupName: string = "Documentation"
 ): NavigationGroup {
-  const navGroups = Array.isArray(config.navigation)
-    ? config.navigation
-    : (config.navigation as any)?.groups || [];
+  const allItems: NavigationItem[] = [];
+
+  // Flatten tabs into groups
+  if (navigation.tabs) {
+    navigation.tabs.forEach((tab) => {
+      if (tab.groups) {
+        allItems.push(...tab.groups);
+      } else if (tab.pages) {
+        // Convert tab pages to a group
+        allItems.push({
+          group: tab.tab,
+          pages: tab.pages,
+          icon: tab.icon,
+          tag: tab.tag,
+        });
+      }
+    });
+  }
+  // Add direct groups
+  else if (navigation.groups) {
+    allItems.push(...navigation.groups);
+  }
+  // Convert pages to a group
+  else if (navigation.pages && navigation.pages.length > 0) {
+    allItems.push({
+      group: groupName,
+      pages: navigation.pages,
+    });
+  }
 
   // If single group, return it directly
-  if (navGroups.length === 1) {
-    return processNavigationGroup(navGroups[0], prefix);
+  if (allItems.length === 1 && typeof allItems[0] !== "string") {
+    return allItems[0] as NavigationGroup;
   }
 
-  // If multiple groups, preserve them as nested groups
-  const processedGroups: any[] = [];
-  for (const group of navGroups) {
-    const processedGroup = processNavigationGroup(group, prefix);
-    processedGroups.push(processedGroup);
-  }
-
+  // Multiple items - wrap in container group
   return {
-    group: config.name || "Documentation",
-    pages: processedGroups,
+    group: groupName,
+    pages: allItems,
   };
 }
 
@@ -542,6 +688,53 @@ function cleanGeneratedDir(): void {
     console.log("🧹 Cleaning docs-generated directory...");
     fs.rmSync(GENERATED_DIR, { recursive: true, force: true });
     console.log("✅ Cleaned docs-generated directory");
+  }
+}
+
+/**
+ * Logs a navigation group in a hierarchical format
+ */
+function logGroup(group: NavigationGroup, indent: string = "  "): void {
+  console.log(`${indent}📁 ${group.group}:`);
+  if (group.pages) {
+    logPages(group.pages, indent + "  ");
+  } else {
+    console.log(`${indent}  ⚠️  No pages generated`);
+  }
+}
+
+/**
+ * Logs navigation pages in a hierarchical format
+ */
+function logPages(pages: NavigationItem[], indent: string = "  "): void {
+  pages.forEach((page) => {
+    if (typeof page === "string") {
+      console.log(`${indent}📄 ${page}`);
+    } else {
+      logGroup(page, indent);
+    }
+  });
+}
+
+/**
+ * Logs the navigation structure in a hierarchical format
+ */
+function logNavigationStructure(navigation: Navigation): void {
+  console.log("📋 Final navigation structure:");
+
+  if (navigation.tabs) {
+    navigation.tabs.forEach((tab) => {
+      console.log(`📑 Tab: ${tab.tab}`);
+      if (tab.groups) {
+        tab.groups.forEach((group) => logGroup(group, "    "));
+      } else if (tab.pages) {
+        logPages(tab.pages, "    ");
+      }
+    });
+  } else if (navigation.groups) {
+    navigation.groups.forEach((group) => logGroup(group));
+  } else if (navigation.pages) {
+    logPages(navigation.pages);
   }
 }
 
@@ -565,92 +758,20 @@ function generateDocs(clean: boolean = false): void {
   }
 
   // Read and process base configuration
-  const baseConfig = readJsonFile(BASE_CONFIG_PATH);
+  const baseConfig = readMintConfig(BASE_CONFIG_PATH);
   console.log(`📖 Read base config: ${Object.keys(baseConfig).length} keys`);
 
-  // Start with base config
-  let mergedConfig: MintConfig = { ...baseConfig };
-
-  // Process navigation structure (tabs or groups)
-  const navigation = baseConfig.navigation as any;
-
-  if (navigation?.tabs) {
-    console.log("📑 Processing tabs navigation structure...");
-    mergedConfig.navigation = {
-      tabs: navigation.tabs.map((tab: any) => {
-        console.log(`🔖 Processing tab: ${tab.tab}`);
-
-        // Handle tab-level autogeneration
-        if (tab.autogenerate) {
-          console.log(
-            `🤖 Auto-generating content for tab: ${tab.tab} from folder: ${tab.autogenerate}`
-          );
-          const processedTab = processNavigationGroup(tab);
-          return {
-            ...tab,
-            groups: processedTab.pages,
-          };
-        }
-
-        // Handle groups within tab
-        if (tab.groups) {
-          return {
-            ...tab,
-            groups: tab.groups.map((group: any) =>
-              processNavigationGroup(group)
-            ),
-          };
-        }
-
-        // Return tab as-is if no autogenerate or groups
-        return tab;
-      }),
-    } as any;
-  } else if (navigation?.groups) {
-    console.log("📁 Processing groups navigation structure...");
-    mergedConfig.navigation = {
-      groups: navigation.groups.map((group: any) =>
-        processNavigationGroup(group)
-      ),
-    } as any;
-  } else {
-    throw new Error(
-      "Invalid navigation structure: expected either 'tabs' or 'groups'"
-    );
-  }
+  const finalConfig: MintConfig = {
+    ...baseConfig,
+    navigation: processDocsNavigation(baseConfig.navigation),
+  };
 
   // Log the final navigation structure
-  console.log("📋 Final navigation structure:");
-  if (navigation?.tabs) {
-    (mergedConfig.navigation as any).tabs.forEach((tab: any) => {
-      console.log(`📑 Tab: ${tab.tab}`);
-      tab.groups.forEach((group: any) => logGroup(group, "    "));
-    });
-  } else {
-    (mergedConfig.navigation as any).groups.forEach((group: any) =>
-      logGroup(group)
-    );
-  }
-
-  // Helper function for logging navigation structure
-  function logGroup(group: any, indent: string = "  ") {
-    console.log(`${indent}📁 ${group.group}:`);
-    if (group.pages && Array.isArray(group.pages)) {
-      group.pages.forEach((page: any) => {
-        if (typeof page === "string") {
-          console.log(`${indent}  📄 ${page}`);
-        } else {
-          logGroup(page, indent + "  ");
-        }
-      });
-    } else {
-      console.log(`${indent}  ⚠️  No pages generated`);
-    }
-  }
+  logNavigationStructure(finalConfig.navigation);
 
   // Write the final configuration to docs-generated directory
   const outputPath = path.join(GENERATED_DIR, "docs.json");
-  writeJsonFile(outputPath, mergedConfig);
+  writeMintConfig(outputPath, finalConfig);
 
   // Save sidebar positions to cache for future runs
   saveSidebarPositions();
